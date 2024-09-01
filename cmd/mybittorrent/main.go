@@ -11,36 +11,38 @@ import (
 // Ensures gofmt doesn't remove the "os" encoding/json import (feel free to remove this!)
 var _ = json.Marshal
 
-// Example:
-// - 5:hello -> hello
-// - 10:hello12345 -> hello12345
 func decodeBencode(bencodedString string) (interface{}, error) {
-	if unicode.IsDigit(rune(bencodedString[0])) {
-		var firstColonIndex int
+	strLen := len(bencodedString)
+	firstByte := bencodedString[0]
+	lastByte := bencodedString[strLen-1]
 
-		for i := 0; i < len(bencodedString); i++ {
+
+	if unicode.IsDigit(rune(firstByte)) {
+		var colonIndex int
+
+		for i := 0; i < strLen; i++ {
 			if bencodedString[i] == ':' {
-				firstColonIndex = i
+				colonIndex = i
 				break
 			}
 		}
 
-		lengthStr := bencodedString[:firstColonIndex]
+		lengthStr := bencodedString[:colonIndex]
 
 		length, err := strconv.Atoi(lengthStr)
 		if err != nil {
 			return "", err
 		}
 
-		return bencodedString[firstColonIndex+1 : firstColonIndex+1+length], nil
-	} else if (bencodedString[0] == 'i' && bencodedString[len(bencodedString)-1] == 'e') {
-		num, err := strconv.Atoi(bencodedString[1:len(bencodedString)-1])
+		return bencodedString[colonIndex+1 : colonIndex+1+length], nil
+	} else if firstByte == 'i' && lastByte == 'e' {
+		num, err := strconv.Atoi(bencodedString[1 : strLen-1])
 		if err != nil {
 			return "", err
 		}
 
 		return num, nil
-	}else {
+	} else {
 		return "", fmt.Errorf("only strings are supported at the moment")
 	}
 }
