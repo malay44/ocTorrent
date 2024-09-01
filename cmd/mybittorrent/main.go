@@ -27,6 +27,8 @@ func decodeBencode(bencodedString string, startIndex int) (interface{}, int, err
 		return decodeString(bencodedString, startIndex);
 	case firstByte == 'l':
 		return decodeList(bencodedString, startIndex);
+	case firstByte == 'd':
+		return decodeDict(bencodedString, startIndex);
 	default:
 		fmt.Println(bencodedString);
 		// explanation of the following line:
@@ -123,6 +125,40 @@ func decodeList(bencodedString string, startIndex int) ([]interface{}, int, erro
 		return list, endIndex+1, nil
 	} else {
 		return nil, startIndex, fmt.Errorf("bad list")
+	}
+}
+
+func decodeDict(bencodedString string, startIndex int) (map[string]interface{}, int, error) {
+	strLen := len(bencodedString)
+	firstByte := bencodedString[startIndex]
+
+	if firstByte == 'd' {
+		var endIndex int
+		dict := map[string]interface{}{}
+
+		for i := startIndex+1; i < strLen; {
+			if bencodedString[i] == 'e' {
+				endIndex = i
+				break
+			}
+
+			key, nextIndex, err := decodeString(bencodedString, i)
+			if err != nil {
+				return nil, startIndex, err
+			}
+			i = nextIndex
+
+			decoded, nextIndex, err := decodeBencode(bencodedString, i)
+			if err != nil {
+				return nil, startIndex, err
+			}
+			dict[key] = decoded
+			i = nextIndex
+		}
+
+		return dict, endIndex+1, nil
+	} else {
+		return nil, startIndex, fmt.Errorf("bad dict")
 	}
 }
 
