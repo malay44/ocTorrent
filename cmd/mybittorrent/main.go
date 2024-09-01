@@ -25,8 +25,15 @@ func decodeBencode(bencodedString string, startIndex int) (interface{}, int, err
 		return decodeInt(bencodedString, startIndex);
 	case unicode.IsDigit(rune(firstByte)):
 		return decodeString(bencodedString, startIndex);
+	case firstByte == 'l':
+		return decodeList(bencodedString, startIndex);
 	default:
-		return nil, startIndex, fmt.Errorf("unexpected value: %q", firstByte)
+		fmt.Println(bencodedString);
+		// explanation of the following line:
+		// strconv.Itoa(startIndex+1) - converts the startIndex to a string
+		fmt.Println(fmt.Sprintf("%"+strconv.Itoa(startIndex+1)+"s", "^"))
+
+		return nil, startIndex, fmt.Errorf("unexpected value: %q at index %d", firstByte, startIndex)
 	}
 }
 
@@ -92,9 +99,35 @@ func decodeInt(bencodedString string, startIndex int) (int, int, error) {
 	}
 }
 
+func decodeList(bencodedString string, startIndex int) ([]interface{}, int, error) {
+	strLen := len(bencodedString)
+	firstByte := bencodedString[startIndex]
+
+	if firstByte == 'l' {
+		var endIndex int
+		list := []interface{}{}
+
+		for i := startIndex+1; i < strLen; {
+			if bencodedString[i] == 'e' {
+				endIndex = i
+				break
+			}
+			decoded, nextIndex, err := decodeBencode(bencodedString, i)
+			if err != nil {
+				return nil, startIndex, err
+			}
+			list = append(list, decoded)
+			i = nextIndex
+		}
+
+		return list, endIndex+1, nil
+	} else {
+		return nil, startIndex, fmt.Errorf("bad list")
+	}
+}
+
 func main() {
 	command := os.Args[1]
-
 	if command == "decode" {
 		bencodedValue := os.Args[2]
 		
