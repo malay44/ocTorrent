@@ -24,14 +24,20 @@ func parseTorrentFile(torrentFile string) (map[string]interface{}, error) {
 	var torrentData map[string]interface{}
 	var ok bool
 	if torrentData, ok = data.(map[string]interface{}); !ok {
-		return nil, fmt.Errorf("Invalid torrent file")
+		return nil, fmt.Errorf("invalid torrent file, dictionary not found")
 	}
+	fmt.Println("Tracker URL:", torrentData["announce"])
+
+	info, ok := torrentData["info"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid torrent file, info key not found")
+	}
+	fmt.Println("Length:", info["length"])
+
 	
 	// sample output
 	//Tracker URL: http://bittorrent-test-tracker.codecrafters.io/announce
 	// Length: 92063
-	fmt.Println("Tracker URL:", torrentData["announce"])
-	fmt.Println("Length:", torrentData["info"].(map[string]interface{})["length"])
 
 	// print map in json format with indent
 	// jsonOutput, _ := json.MarshalIndent(torrentData, "", "  ")
