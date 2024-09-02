@@ -156,3 +156,56 @@ func decodeDict(bencodedString string, startIndex int) (map[string]interface{}, 
 		return nil, startIndex, fmt.Errorf("bad dict")
 	}
 }
+
+func Encode(data interface{}) (string, error) {
+	// "type switch" to determine the type of data
+	switch v := data.(type) {
+	case int:
+		return encodeInt(v), nil
+	case string:
+		return encodeString(v), nil
+	case []interface{}:
+		return encodeList(v)
+	case map[string]interface{}:
+		return encodeDict(v)
+	default:
+		return "", fmt.Errorf("unsupported type: %T", v)
+	}
+}
+
+func encodeInt(num int) string {
+	return fmt.Sprintf("i%de", num)
+}
+
+func encodeString(str string) string {
+	return fmt.Sprintf("%d:%s", len(str), str)
+}
+
+func encodeList(list []interface{}) (string, error) {
+	encodedList := "l"
+
+	for _, v := range list {
+		encoded, err := Encode(v)
+		if err != nil {
+			return "", err
+		}
+		encodedList += encoded
+	}
+
+	return encodedList + "e", nil
+}
+
+func encodeDict(dict map[string]interface{}) (string, error) {
+	encodedDict := "d"
+
+	for k, v := range dict {
+		encodedKey := encodeString(k)
+		encodedValue, err := Encode(v)
+		if err != nil {
+			return "", err
+		}
+		encodedDict += encodedKey + encodedValue
+	}
+
+	return encodedDict + "e", nil
+}
