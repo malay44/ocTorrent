@@ -8,6 +8,38 @@ import (
 	"github.com/codecrafters-io/bittorrent-starter-go/bencode"
 )
 
+func parseTorrentFile(torrentFile string) (map[string]interface{}, error) {
+	file, err := os.ReadFile(torrentFile)
+	if err != nil {
+		return nil, err
+	}
+
+	bencodedSting := string(file);
+	data, _, err := bencode.Decode(bencodedSting, 0);
+	if err != nil {
+		return nil, err
+	}
+
+	// if the data is a dictionary, then it is a valid torrent file
+	var torrentData map[string]interface{}
+	var ok bool
+	if torrentData, ok = data.(map[string]interface{}); !ok {
+		return nil, fmt.Errorf("Invalid torrent file")
+	}
+	
+	// sample output
+	//Tracker URL: http://bittorrent-test-tracker.codecrafters.io/announce
+	// Length: 92063
+	fmt.Println("Tracker URL:", torrentData["announce"])
+	fmt.Println("Length:", torrentData["info"].(map[string]interface{})["length"])
+
+	// print map in json format with indent
+	// jsonOutput, _ := json.MarshalIndent(torrentData, "", "  ")
+	// fmt.Println(string(jsonOutput))
+
+	return torrentData, nil
+}
+
 func main() {
 	command := os.Args[1]
 	if command == "decode" {
@@ -21,7 +53,14 @@ func main() {
 		
 		jsonOutput, _ := json.Marshal(decoded)
 		fmt.Println(string(jsonOutput))
-	} else {
+	} else if command == "info" {
+		torrentFile := os.Args[2]
+		_, err := parseTorrentFile(torrentFile)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}else {
 		fmt.Println("Unknown command: " + command)
 		os.Exit(1)
 	}
