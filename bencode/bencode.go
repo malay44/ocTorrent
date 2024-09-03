@@ -3,7 +3,9 @@ package bencode
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -62,7 +64,7 @@ func decodeString(bencodedString string, startIndex int) (string, int, error) {
 		if length > strLen {
 			return "", startIndex, fmt.Errorf("bad string, length is greater than string length")
 		}
-		str := string([]rune(bencodedString)[colonIndex+1:colonIndex+1+length])
+		str := bencodedString[colonIndex+1:colonIndex+1+length]
 		return str, colonIndex + 1 + length, nil
 	} else {
 		return "", startIndex, fmt.Errorf("bad string")
@@ -196,16 +198,29 @@ func encodeList(list []interface{}) (string, error) {
 }
 
 func encodeDict(dict map[string]interface{}) (string, error) {
-	encodedDict := "d"
+	var encodedDictSb strings.Builder
+	encodedDictSb.WriteString("d")
 
-	for k, v := range dict {
+	// Sort the keys in alphabetical order
+	keys := make([]string, 0, len(dict))
+	for k := range dict {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := dict[k]
+
 		encodedKey := encodeString(k)
+		encodedDictSb.WriteString(encodedKey)
+
 		encodedValue, err := Encode(v)
 		if err != nil {
 			return "", err
 		}
-		encodedDict += encodedKey + encodedValue
+		encodedDictSb.WriteString(encodedValue)
 	}
 
-	return encodedDict + "e", nil
+	encodedDictSb.WriteString("e")
+	return encodedDictSb.String(), nil
 }

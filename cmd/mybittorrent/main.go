@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -34,10 +35,14 @@ func parseTorrentFile(torrentFile string) (map[string]interface{}, error) {
 	}
 	fmt.Println("Length:", info["length"])
 
-	
-	// sample output
-	//Tracker URL: http://bittorrent-test-tracker.codecrafters.io/announce
-	// Length: 92063
+	text, err := bencode.Encode(info)
+	if err != nil {
+		return nil, err
+	}
+	var sha = sha1.New()
+	sha.Write([]byte(text))
+	var encrypted = sha.Sum(nil)
+	fmt.Println("Info Hash:", fmt.Sprintf("%x", encrypted))
 
 	// print map in json format with indent
 	// jsonOutput, _ := json.MarshalIndent(torrentData, "", "  ")
