@@ -44,6 +44,21 @@ func parseTorrentFile(torrentFile string) (map[string]interface{}, error) {
 	var encrypted = sha.Sum(nil)
 	fmt.Println("Info Hash:", fmt.Sprintf("%x", encrypted))
 
+	fmt.Println("Piece Length:", info["piece length"])
+
+	// Piece Hashes
+	pieceHashes := info["pieces"].(string)
+	pieceHashesLength := len(pieceHashes)
+	const pieceLength = 20
+	pieces := pieceHashesLength / pieceLength
+
+	fmt.Println("Piece Hashes:")
+	for i := 0; i < pieces; i++ {
+		start := i * pieceLength
+		end := (i + 1) * pieceLength
+		fmt.Printf("%x\n", pieceHashes[start:end])
+	}
+
 	// print map in json format with indent
 	// jsonOutput, _ := json.MarshalIndent(torrentData, "", "  ")
 	// fmt.Println(string(jsonOutput))
