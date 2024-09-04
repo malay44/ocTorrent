@@ -8,8 +8,19 @@ import (
 	"github.com/codecrafters-io/bittorrent-starter-go/bencode"
 )
 
-func parseTorrentFile(torrentFile string) (map[string]interface{}, error) {
-	file, err := os.ReadFile(torrentFile)
+type Torrent struct {
+	Announce string
+	
+	Info     struct {
+		Length      int
+		PieceLength int
+		Pieces      []string
+		hash 		[]byte
+	}
+}
+
+func parseTorrentFile(torrentFileName string, torrent *Torrent) (map[string]interface{}, error) {
+	file, err := os.ReadFile(torrentFileName)
 	if err != nil {
 		return nil, err
 	}
@@ -26,13 +37,14 @@ func parseTorrentFile(torrentFile string) (map[string]interface{}, error) {
 	if torrentData, ok = data.(map[string]interface{}); !ok {
 		return nil, fmt.Errorf("invalid torrent file, dictionary not found")
 	}
-	fmt.Println("Tracker URL:", torrentData["announce"])
+	torrent.Announce = torrentData["announce"].(string)
+
 
 	info, ok := torrentData["info"].(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("invalid torrent file, info key not found")
 	}
-	fmt.Println("Length:", info["length"])
+	torrent.Info.Length = info["length"].(int)
 
 	text, err := bencode.Encode(info)
 	if err != nil {
@@ -41,9 +53,9 @@ func parseTorrentFile(torrentFile string) (map[string]interface{}, error) {
 	var sha = sha1.New()
 	sha.Write([]byte(text))
 	var encrypted = sha.Sum(nil)
-	fmt.Println("Info Hash:", fmt.Sprintf("%x", encrypted))
+	torrent.Info.hash = encrypted
 
-	fmt.Println("Piece Length:", info["piece length"])
+	torrent.Info.PieceLength = info["piece length"].(int)
 
 	// Piece Hashes
 	pieceHashes := info["pieces"].(string)
@@ -51,16 +63,13 @@ func parseTorrentFile(torrentFile string) (map[string]interface{}, error) {
 	const pieceLength = 20
 	pieces := pieceHashesLength / pieceLength
 
-	fmt.Println("Piece Hashes:")
+	torrent.Info.Pieces = make([]string, pieces)
 	for i := 0; i < pieces; i++ {
 		start := i * pieceLength
 		end := (i + 1) * pieceLength
-		fmt.Printf("%x\n", pieceHashes[start:end])
+		torrent.Info.Pieces[i] = pieceHashes[start:end]
 	}
 
-	// print map in json format with indent
-	// jsonOutput, _ := json.MarshalIndent(torrentData, "", "  ")
-	// fmt.Println(string(jsonOutput))
 
 	return torrentData, nil
 }
