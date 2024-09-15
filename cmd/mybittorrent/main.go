@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net"
 	"os"
 
 	"github.com/codecrafters-io/bittorrent-starter-go/bencode"
@@ -56,6 +58,35 @@ func main() {
 		for _, peer := range peerList {
 			fmt.Println(peer)
 		}
+	} else if command == "handshake" {
+		torrentFile := os.Args[2]
+		peer := os.Args[3]
+		var torrent Torrent
+		_, err := parseTorrentFile(torrentFile, &torrent)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		conn, err := net.Dial("tcp", peer)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		var buf []byte
+		buf = append(buf, 19)
+		buf = append(buf, []byte("BitTorrent protocol")...)
+		buf = append(buf, make([]byte, 8)...)
+		buf = append(buf, torrent.Info.hash...)
+		buf = append(buf, []byte("00112233445566778899")...)
+		_, err = conn.Write(buf)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		answer := make([]byte, 68)
+		io.ReadFull(conn, answer)
+		// Read last 20 bytes (peerID)
+		fmt.Printf("Peer ID: %x\n", answer[48:])	
 	}else {
 		fmt.Println("Unknown command: " + command)
 		os.Exit(1)
