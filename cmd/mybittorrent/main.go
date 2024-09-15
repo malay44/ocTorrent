@@ -73,11 +73,11 @@ func main() {
 			return
 		}
 		var buf []byte
-		buf = append(buf, 19)
-		buf = append(buf, []byte("BitTorrent protocol")...)
-		buf = append(buf, make([]byte, 8)...)
-		buf = append(buf, torrent.Info.hash...)
-		buf = append(buf, []byte("00112233445566778899")...)
+		buf = append(buf, 19)                                // 01 byte
+		buf = append(buf, []byte("BitTorrent protocol")...)  // 19 bytes
+		buf = append(buf, make([]byte, 8)...)                // 08 bytes
+		buf = append(buf, torrent.Info.hash...)              // 20 bytes
+		buf = append(buf, []byte("00112233445566778899")...) // 20 bytes
 		_, err = conn.Write(buf)
 		if err != nil {
 			fmt.Println(err)
