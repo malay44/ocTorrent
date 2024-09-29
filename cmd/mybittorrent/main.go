@@ -67,27 +67,15 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		conn, err := net.Dial("tcp", peer)
+		answer, err := Handshake(peer, &torrent.Info.hash)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		var buf []byte
-		buf = append(buf, 19)                                // 01 byte
-		buf = append(buf, []byte("BitTorrent protocol")...)  // 19 bytes
-		buf = append(buf, make([]byte, 8)...)                // 08 bytes
-		buf = append(buf, torrent.Info.hash...)              // 20 bytes
-		buf = append(buf, []byte("00112233445566778899")...) // 20 bytes
-		_, err = conn.Write(buf)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		answer := make([]byte, 68)
-		io.ReadFull(conn, answer)
 		// Read last 20 bytes (peerID)
 		fmt.Printf("Peer ID: %x\n", answer[48:])	
-	}else {
+	} else if command == "download_piece" {
+	} else {
 		fmt.Println("Unknown command: " + command)
 		os.Exit(1)
 	}
