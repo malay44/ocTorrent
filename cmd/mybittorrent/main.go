@@ -4,9 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net"
 	"os"
+	"strconv"
 
 	"github.com/codecrafters-io/bittorrent-starter-go/bencode"
 )
@@ -67,7 +66,7 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		answer, err := Handshake(peer, &torrent.Info.hash)
+		_,answer, err := Handshake(peer, &torrent.Info.hash)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -75,6 +74,20 @@ func main() {
 		// Read last 20 bytes (peerID)
 		fmt.Printf("Peer ID: %x\n", answer[48:])	
 	} else if command == "download_piece" {
+		// $ ./your_bittorrent.sh download_piece -o /tmp/test-piece-0 sample.torrent 0
+		outputFile := os.Args[3]
+		torrentFile := os.Args[4]
+		pieceIndex := os.Args[5]
+		index, err := strconv.Atoi(pieceIndex)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = RetrievePiece(outputFile, torrentFile, index)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	} else {
 		fmt.Println("Unknown command: " + command)
 		os.Exit(1)

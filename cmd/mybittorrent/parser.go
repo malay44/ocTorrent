@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -16,6 +17,16 @@ type Torrent struct {
 		PieceLength int
 		Pieces      []string
 		hash 		[]byte
+	}
+}
+func (torrent *Torrent) Print () {
+	fmt.Println("Tracker URL:", torrent.Announce)
+	fmt.Println("Length:", torrent.Info.Length)
+	fmt.Println("Info Hash: " + hex.EncodeToString(torrent.Info.hash))
+	fmt.Println("Piece Length:", torrent.Info.PieceLength)
+	fmt.Println("Piece Hashes:")
+	for _, piece := range torrent.Info.Pieces {
+		fmt.Println(hex.EncodeToString([]byte(piece)))
 	}
 }
 

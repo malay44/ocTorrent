@@ -5,10 +5,10 @@ import (
 	"net"
 )
 
-func Handshake(peer string, hash *[]byte) ([]byte, error) {
+func Handshake(peer string, hash *[]byte) (net.Conn, []byte, error) {
 	conn, err := net.Dial("tcp", peer)
 	if err != nil {
-		return nil, err
+		return conn, nil, err
 	}
 	var buf []byte
 	buf = append(buf, 19)                                // 01 byte
@@ -18,9 +18,9 @@ func Handshake(peer string, hash *[]byte) ([]byte, error) {
 	buf = append(buf, []byte("00112233445566778899")...) // 20 bytes
 	_, err = conn.Write(buf)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	answer := make([]byte, 68)
 	io.ReadFull(conn, answer)
-	return answer, nil
+	return conn, answer, nil
 }
