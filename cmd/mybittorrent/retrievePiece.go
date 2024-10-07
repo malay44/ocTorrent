@@ -28,7 +28,7 @@ func RetrievePiece(outputFile string, torrentFile string, pieceIndex int) error 
 	}
 	fmt.Printf("Retrieved peer list: %+v\n", peerList)
 
-	conn, _, err := Handshake(peerList[1], &torrent.Info.hash)
+	conn, _, err := Handshake(peerList[0], &torrent.Info.hash)
 	if err != nil {
 		fmt.Printf("Handshake failed: %v\n", err)
 		return err
@@ -61,27 +61,24 @@ func RetrievePiece(outputFile string, torrentFile string, pieceIndex int) error 
 	fmt.Println("Received unchoke message")
 
 	// Break the piece into blocks and send request messages
-	var BLOCKSIZE uint32 = 16 * 1024
+	var BLOCK_SIZE uint32 = 16 * 1024
 	var byteOffset uint32 = 0
 	var PieceLength uint32 = uint32(torrent.Info.PieceLength)
 	if pieceIndex == len(torrent.Info.Pieces)-1 {
 		PieceLength = uint32(torrent.Info.Length % torrent.Info.PieceLength)
 	}
 	var data = make([]byte, PieceLength)
-	count := 0
+	var count uint32 = 0
 
-	for {
+	perfectIterations := PieceLength / BLOCK_SIZE
+	lastIterationLength := PieceLength % BLOCK_SIZE
+
+	for count = 0; count <= perfectIterations; count++ {
 		payload := make([]byte, 12)
-		var length uint32 = BLOCKSIZE
-		if byteOffset >= PieceLength {
-			length = BLOCKSIZE - (byteOffset - PieceLength)
-			fmt.Printf("Last block, length: %d\n", length)
-			fmt.Printf("Piece length: %d\n", PieceLength)
-			fmt.Printf("Byte offset: %d\n", byteOffset)
-			if length == 0 || byteOffset - PieceLength == 0 {
-				fmt.Println("No more blocks to request")
-				break
-			}
+		byteOffset = count * BLOCK_SIZE
+		var length uint32 = BLOCK_SIZE
+		if count == perfectIterations {
+			length = lastIterationLength
 		}
 		binary.BigEndian.PutUint32(payload[0:4], uint32(pieceIndex))
 		binary.BigEndian.PutUint32(payload[4:8], uint32(byteOffset))
@@ -89,11 +86,6 @@ func RetrievePiece(outputFile string, torrentFile string, pieceIndex int) error 
 		fmt.Printf("payload: %v\n", payload)
 		fmt.Printf("Sending request for block at offset %d (length: %d)\n", byteOffset, length)
 		conn.Write(CreateMessage(6, payload))
-		count++
-		if byteOffset >= PieceLength {
-			break
-		}
-		byteOffset += BLOCKSIZE
 	}
 
 	// Receive block data
